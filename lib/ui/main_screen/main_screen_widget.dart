@@ -1,43 +1,50 @@
 import 'package:bibitrip/resources/app_resources.dart';
+import 'package:bibitrip/ui/main_screen/main_screen_bloc.dart';
 import 'package:dotted_dashed_line/dotted_dashed_line.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:bibitrip/ui/main_screen/main_screen_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class MainScreenWidget extends StatelessWidget {
   const MainScreenWidget({super.key});
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
-    return Scaffold(
-      appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(
-              Icons.menu,
-              size: 30,
+    final bloc = context.watch<MainScreenBloc>();
+
+    return BlocListener<MainScreenBloc, MainScreenState>(
+      listenWhen: (prev, current) {
+        return current == prev;
+      },
+      listener: (context, state) {},
+      child: Scaffold(
+        appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(
+                Icons.menu,
+                size: 30,
+              ),
+              onPressed: () {},
             ),
-            onPressed: () {},
-          ),
-          actions: [
-            IconButton(
-                icon: const Icon(
-                  Icons.exit_to_app_outlined,
-                  size: 30,
-                ),
-                onPressed: () => model.exitApp(context))
-          ],
-          title: const Text('Поиск автобусов',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
-      body: RefreshIndicator(
-        onRefresh: () => model.refresh(),
-        child: const SingleChildScrollView(
-          child: Column(
-            children: [
-              MainScreenHeader(),
-              BusSearchButton(),
-              BusListBuilder(),
+            actions: [
+              IconButton(
+                  icon: const Icon(
+                    Icons.exit_to_app_outlined,
+                    size: 30,
+                  ),
+                  onPressed: () => bloc.exitApp(context))
             ],
+            title: const Text('Поиск автобусов',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w700))),
+        body: RefreshIndicator(
+          onRefresh: () => bloc.refresh(),
+          child: const SingleChildScrollView(
+            child: Column(
+              children: [
+                MainScreenHeader(),
+                BusSearchButton(),
+                BusListBuilder(),
+              ],
+            ),
           ),
         ),
       ),
@@ -50,10 +57,10 @@ class MainScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
+    final bloc = context.watch<MainScreenBloc>();
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: model.errorMessage != null ? 300 : 270,
+      height: bloc.state.errorMessage != null ? 300 : 270,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -86,7 +93,7 @@ class DepartureAndDestinitionForm extends StatelessWidget {
   const DepartureAndDestinitionForm({super.key});
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
+    final bloc = context.read<MainScreenBloc>();
     return Column(
       children: [
         Row(
@@ -99,7 +106,7 @@ class DepartureAndDestinitionForm extends StatelessWidget {
             const SizedBox(width: 15),
             Expanded(
               child: TextField(
-                controller: model.departureCity,
+                controller: bloc.state.departureCity,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: Color.fromRGBO(243, 243, 243, 1),
@@ -130,7 +137,7 @@ class DepartureAndDestinitionForm extends StatelessWidget {
             const SizedBox(width: 15),
             Expanded(
               child: TextField(
-                controller: model.destinationCity,
+                controller: bloc.state.destinationCity,
                 decoration: const InputDecoration(
                   filled: true,
                   fillColor: Color.fromRGBO(243, 243, 243, 1),
@@ -157,7 +164,7 @@ class DateForm extends StatelessWidget {
   const DateForm({super.key});
   @override
   Widget build(BuildContext context) {
-    final model = context.read<MainScreenModel>();
+    final bloc = context.read<MainScreenBloc>();
     return Row(
       children: [
         const Icon(
@@ -170,7 +177,7 @@ class DateForm extends StatelessWidget {
         ),
         Expanded(
           child: TextField(
-            controller: model.departureDate,
+            controller: bloc.state.departureDate,
             obscureText: false,
             decoration: const InputDecoration(
               filled: true,
@@ -181,7 +188,7 @@ class DateForm extends StatelessWidget {
             ),
             style: AppResources.textFieldStylee,
             readOnly: true,
-            onTap: () => model.selectDate(context),
+            onTap: () => bloc.selectDate(context),
           ),
         ),
       ],
@@ -193,15 +200,15 @@ class BusSearchButton extends StatelessWidget {
   const BusSearchButton({super.key});
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
+    final bloc = context.watch<MainScreenBloc>();
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: SizedBox(
         width: MediaQuery.of(context).size.width,
         child: ElevatedButton(
-          onPressed: () => model.busSearchButton(),
+          onPressed: () => bloc.busSearchButton(),
           style: AppResources.buttonStyle,
-          child: model.startFindLoading == true
+          child: bloc.state.startFindLoading == true
               ? AppResources.circularProgresIndicator
               : const Text(
                   'Найти',
@@ -217,8 +224,8 @@ class ErrorMessageWidget extends StatelessWidget {
   const ErrorMessageWidget({super.key});
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
-    if (model.errorMessage == null) {
+    final bloc = context.watch<MainScreenBloc>();
+    if (bloc.state.errorMessage == null) {
       return const SizedBox.shrink();
     } else {
       return Column(
@@ -226,7 +233,7 @@ class ErrorMessageWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              model.errorMessage!,
+              bloc.state.errorMessage!,
               style: AppResources.errorMessageStyle,
             ),
           ),
@@ -241,14 +248,14 @@ class BusListBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<MainScreenModel>();
-    return (model.busTrips == null || model.busTrips!.trips.isEmpty)
+    final bloc = context.watch<MainScreenBloc>();
+    return (bloc.state.busTrips == null || bloc.state.busTrips!.trips.isEmpty)
         ? const SizedBox.shrink()
         : ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            itemCount: model.busTrips!.trips.length,
+            itemCount: bloc.state.busTrips!.trips.length,
             itemExtent: 209,
             itemBuilder: (BuildContext context, int index) {
               return Padding(
@@ -312,19 +319,19 @@ class BusListBuilder extends StatelessWidget {
                                           constraints: const BoxConstraints(
                                               minWidth: 120),
                                           child: Text(
-                                            model.departureCity.text,
+                                            bloc.state.departureCity.text,
                                             style: AppResources
                                                 .busListCityTextStyle,
                                           ),
                                         ),
                                         Text(
-                                          model.getDay(model.busTrips!
+                                          bloc.getDay(bloc.state.busTrips!
                                               .trips[index].departureTime),
                                           style: AppResources
                                               .busListOptionTextStyle,
                                         ),
                                         Text(
-                                          model.getTime(model.busTrips!
+                                          bloc.getTime(bloc.state.busTrips!
                                               .trips[index].departureTime),
                                           style: AppResources
                                               .busListOptionTextStyle,
@@ -333,8 +340,8 @@ class BusListBuilder extends StatelessWidget {
                                     ),
                                     Row(
                                       children: [
-                                        model.busTrips?.trips[index].departure
-                                                    ?.name ==
+                                        bloc.state.busTrips?.trips[index]
+                                                    .departure?.name ==
                                                 null
                                             ? const SizedBox.shrink()
                                             : const Icon(
@@ -346,12 +353,16 @@ class BusListBuilder extends StatelessWidget {
                                           width: 5,
                                         ),
                                         Text(
-                                          model.busTrips?.trips[index].departure
-                                                      ?.name ==
+                                          bloc.state.busTrips?.trips[index]
+                                                      .departure?.name ==
                                                   null
                                               ? ''
-                                              : model.busTrips!.trips[index]
-                                                  .departure!.name!,
+                                              : bloc
+                                                  .state
+                                                  .busTrips!
+                                                  .trips[index]
+                                                  .departure!
+                                                  .name!,
                                           style: AppResources
                                               .busListOptionTextStyle,
                                         ),
@@ -391,19 +402,19 @@ class BusListBuilder extends StatelessWidget {
                                           constraints: const BoxConstraints(
                                               minWidth: 120),
                                           child: Text(
-                                            model.destinationCity.text,
+                                            bloc.state.destinationCity.text,
                                             style: AppResources
                                                 .busListCityTextStyle,
                                           ),
                                         ),
                                         Text(
-                                          model.getDay(model.busTrips!
+                                          bloc.getDay(bloc.state.busTrips!
                                               .trips[index].arrivalTime),
                                           style: AppResources
                                               .busListOptionTextStyle,
                                         ),
                                         Text(
-                                          model.getTime(model.busTrips!
+                                          bloc.getTime(bloc.state.busTrips!
                                               .trips[index].arrivalTime),
                                           style: AppResources
                                               .busListOptionTextStyle,
@@ -412,8 +423,8 @@ class BusListBuilder extends StatelessWidget {
                                     ),
                                     Row(
                                       children: [
-                                        model.busTrips?.trips[index].destination
-                                                    ?.name ==
+                                        bloc.state.busTrips?.trips[index]
+                                                    .destination?.name ==
                                                 null
                                             ? const SizedBox.shrink()
                                             : const Icon(
@@ -425,12 +436,16 @@ class BusListBuilder extends StatelessWidget {
                                           width: 5,
                                         ),
                                         Text(
-                                          model.busTrips?.trips[index]
+                                          bloc.state.busTrips?.trips[index]
                                                       .destination?.name ==
                                                   null
                                               ? ''
-                                              : model.busTrips!.trips[index]
-                                                  .destination!.name!,
+                                              : bloc
+                                                  .state
+                                                  .busTrips!
+                                                  .trips[index]
+                                                  .destination!
+                                                  .name!,
                                           style: AppResources
                                               .busListOptionTextStyle,
                                         ),

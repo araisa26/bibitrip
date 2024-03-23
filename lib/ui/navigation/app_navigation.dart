@@ -11,6 +11,6 @@ abstract class AppNavigation {
   static Map<String, WidgetBuilder> routes = {
     RoutesName.loaderScreen: (_) => ScreenCreate.loaderScreen(),
     RoutesName.authScreen: (_) => ScreenCreate.authScreen(),
-    RoutesName.mainScreen: (_) => ScreenCreate.mainScreen(),
+    RoutesName.mainScreen: (_) => ScreenCreate().mainScreen(),
   };
 }

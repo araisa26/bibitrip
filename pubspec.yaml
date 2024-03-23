@@ -46,6 +46,8 @@ dependencies:
   url_launcher: ^6.0.3
   dio: ^5.4.1
   dotted_dashed_line: ^0.0.3
+  flutter_bloc: ^8.1.4
+  bloc_concurrency: ^0.2.4
 
 dev_dependencies:
   flutter_test:
